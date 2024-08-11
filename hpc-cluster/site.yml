@@ -17,6 +17,22 @@
         - { name: "compute", instance_type: "t2.micro", count: 2 }
       register: ec2
 
+    - name: Save EC2 instance details to inventory file
+      copy:
+        content: |
+          [master]
+          {% for instance in ec2.instances if instance.tags.Name == 'master' %}
+          {{ instance.public_ip_address }}
+          {% endfor %}
+
+          [compute]
+          {% for instance in ec2.instances if instance.tags.Name == 'compute' %}
+          {{ instance.public_ip_address }}
+          {% endfor %}
+        dest: ./inventory
+      when: ec2 is defined
+
+
 - name: Set up HPC cluster
   hosts: all
   become: yes
