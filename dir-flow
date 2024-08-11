@@ -1,0 +1,22 @@
+hpc-cluster-setup/
+├── ansible.cfg
+├── inventory
+├── group_vars/
+│   ├── all.yml
+│   ├── master.yml
+│   └── compute.yml
+├── roles/
+│   ├── provisioning/
+│   │   ├── tasks/
+│   │   │   └── main.yml
+│   ├── common/
+│   │   ├── tasks/
+│   │   │   └── main.yml
+│   ├── master/
+│   │   ├── tasks/
+│   │   │   └── main.yml
+│   ├── compute/
+│   │   ├── tasks/
+│   │   │   └── main.yml
+├── site.yml
+└── README.md

@@ -1,0 +1,42 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  roles:
+    - provisioning
+
+- hosts: hpc
+  become: yes
+  roles:
+    - common
+
+- hosts: master
+  become: yes
+  roles:
+    - master
+
+- hosts: compute
+  become: yes
+  roles:
+    - compute
+# ---
+# - hosts: localhost
+#   connection: local
+#   gather_facts: no
+#   roles:
+#     - provisioning
+
+# - hosts: hpc
+#   become: yes
+#   roles:
+#     - common
+
+# - hosts: master
+#   become: yes
+#   roles:
+#     - master
+
+# - hosts: compute
+#   become: yes
+#   roles:
+#     - compute

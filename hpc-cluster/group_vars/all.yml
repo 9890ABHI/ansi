@@ -1,0 +1,15 @@
+---
+aws_region: us-east-1
+aws_key_name: your-aws-keypair-name
+aws_security_group: hpc-security-group
+aws_ami: ami-0abcdef1234567890 # Replace with the AMI ID you want to use
+aws_instance_type: t2.medium
+
+# Number of compute nodes to create
+compute_instance_count: 2
+
+hpc_software:
+  - openmpi
+  - slurm-wlm
+  - nfs-utils
+  - ganglia-monitor

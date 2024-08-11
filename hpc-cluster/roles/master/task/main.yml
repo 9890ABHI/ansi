@@ -1,0 +1,17 @@
+---
+- name: Install SLURM controller on master node
+  apt:
+    name: slurmctld
+    state: present
+
+- name: Configure SLURM controller
+  template:
+    src: slurm.conf.j2
+    dest: /etc/slurm-llnl/slurm.conf
+    mode: 0644
+
+- name: Start and enable SLURM controller
+  service:
+    name: slurmctld
+    state: started
+    enabled: yes

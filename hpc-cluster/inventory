@@ -1,0 +1,9 @@
+[master]
+# Populated dynamically by provisioning role
+
+[compute]
+# Populated dynamically by provisioning role
+
+[hpc:children]
+master
+compute

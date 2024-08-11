@@ -1,0 +1,100 @@
+---
+- name: Launch Master Node
+  ec2:
+    key_name: "{{ aws_key_name }}"
+    instance_type: "{{ aws_instance_type }}"
+    image: "{{ aws_ami }}"
+    region: "{{ aws_region }}"
+    group: "{{ aws_security_group }}"
+    count: 1
+    instance_tags:
+      Name: hpc-master
+      Role: master
+    wait: yes
+  register: ec2_master
+
+- name: Launch Compute Nodes
+  ec2:
+    key_name: "{{ aws_key_name }}"
+    instance_type: "{{ aws_instance_type }}"
+    image: "{{ aws_ami }}"
+    region: "{{ aws_region }}"
+    group: "{{ aws_security_group }}"
+    count: "{{ compute_instance_count }}"
+    instance_tags:
+      Name: hpc-compute
+      Role: compute
+    wait: yes
+  register: ec2_compute
+
+- name: Add master node to inventory
+  add_host:
+    name: "{{ item.public_ip }}"
+    groups: master
+  with_items: "{{ ec2_master.instances }}"
+
+- name: Add compute nodes to inventory
+  add_host:
+    name: "{{ item.public_ip }}"
+    groups: compute
+  with_items: "{{ ec2_compute.instances }}"
+
+- name: Wait for SSH to come up
+  wait_for:
+    host: "{{ item.public_ip }}"
+    port: 22
+    delay: 10
+    timeout: 320
+  with_items:
+    - "{{ ec2_master.instances }}"
+    - "{{ ec2_compute.instances }}"
+# ---
+# - name: Launch Master Node
+#   ec2:
+#     key_name: "{{ aws_key_name }}"
+#     instance_type: "{{ aws_instance_type }}"
+#     image: "{{ aws_ami }}"
+#     region: "{{ aws_region }}"
+#     group: "{{ aws_security_group }}"
+#     count: 1
+#     instance_tags:
+#       Name: hpc-master
+#       Role: master
+#     wait: yes
+#   register: ec2_master
+
+# - name: Launch Compute Nodes
+#   ec2:
+#     key_name: "{{ aws_key_name }}"
+#     instance_type: "{{ aws_instance_type }}"
+#     image: "{{ aws_ami }}"
+#     region: "{{ aws_region }}"
+#     group: "{{ aws_security_group }}"
+#     count: 2
+#     instance_tags:
+#       Name: hpc-compute
+#       Role: compute
+#     wait: yes
+#   register: ec2_compute
+
+# - name: Add master node to inventory
+#   add_host:
+#     name: "{{ item.public_ip }}"
+#     groups: master
+#   with_items: "{{ ec2_master.instances }}"
+
+# - name: Add compute nodes to inventory
+#   add_host:
+#     name: "{{ item.public_ip }}"
+#     groups: compute
+#   with_items: "{{ ec2_compute.instances }}"
+
+# - name: Wait for SSH to come up
+#   wait_for:
+#     host: "{{ item.public_ip }}"
+#     port: 22
+#     delay: 10
+#     timeout: 320
+#   with_items:
+#     - "{{ ec2_master.instances }}"
+#     - "{{ ec2_compute.instances }}"

@@ -1,0 +1,17 @@
+---
+- name: Install SLURM compute daemon on compute nodes
+  apt:
+    name: slurmd
+    state: present
+
+- name: Configure SLURM daemon on compute nodes
+  template:
+    src: slurm.conf.j2
+    dest: /etc/slurm-llnl/slurm.conf
+    mode: 0644
+
+- name: Start and enable SLURM daemon
+  service:
+    name: slurmd
+    state: started
+    enabled: yes
