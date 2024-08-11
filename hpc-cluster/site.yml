@@ -22,15 +22,19 @@
     - name: Save EC2 instance details to inventory file
       copy:
         content: |
-          [master]
-          {% for instance in ec2.instances if instance.tags.Name == 'master' %}
-          {{ instance.public_ip_address }}
-          {% endfor %}
+                [master]
+                {% for instance in ec2.instances %}
+                {% if instance.tags.Name == 'master' %}
+                {{ instance.public_ip_address }}
+                {% endif %}
+                {% endfor %}
 
-          [compute]
-          {% for instance in ec2.instances if instance.tags.Name == 'compute' %}
-          {{ instance.public_ip_address }}
-          {% endfor %}
+                [compute]
+                {% for instance in ec2.instances %}
+                {% if instance.tags.Name == 'compute' %}
+                {{ instance.public_ip_address }}
+                {% endif %}
+                {% endfor %}
         dest: ./inventory
       when: ec2 is defined
 
