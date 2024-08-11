@@ -1,9 +1,10 @@
 ---
 aws_region: us-east-1
-aws_key_name: your-aws-keypair-name
-aws_security_group: hpc-security-group
-aws_ami: ami-0abcdef1234567890 # Replace with the AMI ID you want to use
-aws_instance_type: t2.medium
+aws_key_name: "{{ lookup('env', 'KEY_NAME') }}"
+aws_security_group: launch-wizard-11
+aws_ami: "{{ lookup('env', 'IMAGE_NAME') }}" # Replace with the AMI ID you want to use
+aws_instance_type: t2.micro
+aws_subnet_id: "{{ subnet_id }}"
 
 # Number of compute nodes to create
 compute_instance_count: 2
