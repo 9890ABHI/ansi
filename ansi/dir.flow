@@ -1,0 +1,21 @@
+ansible-hpc-cluster/
+├── inventory
+├── playbook.yml
+├── roles/
+│   ├── common/
+│   │   └── tasks/
+│   │       └── main.yml
+│   ├── slurm/
+│   │   └── tasks/
+│   │       ├── main.yml
+│   │       └── templates/
+│   │           └── slurm.conf.j2
+│   └── ganglia/
+│       └── tasks/
+│           ├── main.yml
+│           └── templates/
+│               ├── gmetad.conf.j2
+│               └── gmond.conf.j2
+├── group_vars/
+│   └── all.yml
+└── provision.yml

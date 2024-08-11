@@ -1,0 +1,9 @@
+# Example SLURM configuration
+
+ControlMachine=master
+AuthType=auth/munge
+SlurmdPort=7003
+SlurmctldPort=7003
+
+NodeName=compute[1-2] State=UNKNOWN
+PartitionName=debug Nodes=compute[1-2] Default=YES MaxTime=INFINITE State=UP

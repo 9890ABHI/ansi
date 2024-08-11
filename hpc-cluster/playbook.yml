@@ -1,0 +1,53 @@
+- name: Provision EC2 instances
+  hosts: localhost
+  gather_facts: no
+  tasks:
+      - name: Launch master node
+      amazon.aws.ec2_instance:
+        name: "hpc-master"
+        key_name: boot-1
+        instance_type: "t2.micro"
+        image_id: "ami-04a81a99f5ec58529"  # Replace with your preferred AMI ID
+        region: "us-east-1"
+        security_groups: launch-wizard-11
+        count: 1
+        wait: yes
+      register: master_instance
+
+    - name: Launch compute nodes
+      amazon.aws.ec2_instance:
+        name: "hpc-compute"
+        key_name: "boot-1"
+        instance_type: "t2.micro"
+        image_id: "ami-04a81a99f5ec58529"  # Replace with your preferred AMI ID
+        region: "us-east-1"
+        security_groups: launch-wizard-11
+        count: 2
+        wait: yes
+      register: compute_instances
+
+    - name: Add master to inventory
+      add_host:
+        name: "{{ master_instance.instances[0].public_ip_address }}"
+        groups: master
+
+    - name: Add compute nodes to inventory
+      add_host:
+        name: "{{ item.public_ip_address }}"
+        groups: compute
+      loop: "{{ compute_instances.instances }}"
+
+    - name: Save updated inventory to file
+      copy:
+        content: |
+          [master]
+          master ansible_host={{ master_instance.instances[0].public_ip_address }}
+
+          [compute]
+          {% for instance in compute_instances.instances %}
+          compute{{ loop.index }} ansible_host={{ instance.public_ip_address }}
+          {% endfor %}
+
+          [all:vars]
+          ansible_user=ubuntu
+        dest: inventory

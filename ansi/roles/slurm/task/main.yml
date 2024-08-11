@@ -1,0 +1,23 @@
+---
+- name: Install SLURM
+  yum:
+    name:
+      - slurm
+      - slurm-slurmd
+      - slurm-slurmctld
+    state: present
+
+- name: Configure SLURM on master
+  template:
+    src: slurm.conf.j2
+    dest: /etc/slurm/slurm.conf
+  when: inventory_hostname == 'master'
+
+- name: Start and enable SLURM services
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  with_items:
+    - slurmctld
+    - slurmd

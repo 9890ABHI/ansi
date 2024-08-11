@@ -1,0 +1,13 @@
+---
+- name: Update all packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: Install basic utilities
+  yum:
+    name:
+      - vim
+      - git
+      - wget
+    state: present
