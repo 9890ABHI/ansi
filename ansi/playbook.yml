@@ -5,15 +5,104 @@
   roles:
     - common
 
-- name: Configure SLURM and Ganglia
-  hosts: master
-  become: yes
-  roles:
-    - slurm
-    - ganglia
 
-- name: Configure SLURM on Compute Nodes
-  hosts: compute
+- name: Install dependencies
+  hosts: all
   become: yes
-  roles:
-    - slurm
+  tasks:
+    - name: Install dependencies
+      apt:
+        name:
+          - build-essential
+          - libtool
+          - autoconf
+          - automake
+          - bison
+          - flex
+          # - libmunge-dev
+          - libpam0g-dev
+          - libssl-dev
+          # - libmariadb-dev
+          - libsqlite3-dev
+          - pkg-config
+          - slurm-client
+        state: present
+
+    - name: Download Slurm source
+      get_url:
+        url: "https://download.schedmd.com/slurm/slurm-22.05.5.tar.bz2"
+        dest: "/tmp/slurm-22.05.5.tar.bz2"
+
+    - name: Extract Slurm source
+      unarchive:
+        src: "/tmp/slurm-22.05.5.tar.bz2"
+        dest: "/tmp/"
+        remote_src: yes
+
+    # - name: Build and install Slurm
+    #   shell: |
+    #     cd /tmp/slurm-22.05.5
+    #     ./configure --prefix=/usr/local/slurm
+    #     make
+    #     make install
+    #   args:
+    #     chdir: /tmp/slurm-22.05.5
+
+    # - name: Create Slurm configuration directory
+    #   file:
+    #     path: "/etc/slurm-llnl"
+    #     state: directory
+
+    # - name: Copy Slurm configuration file
+    #   copy:
+    #     src: "../template/slurm.conf.j2"
+    #     dest: "/etc/slurm-llnl/slurm.conf"
+    #     owner: root
+    #     group: root
+    #     mode: '0644'
+
+    # - name: Create Slurm systemd service files
+    #   template:
+    #     src: "slurmctld.service.j2"
+    #     dest: "/etc/systemd/system/slurmctld.service"
+      
+
+    # - name: Create slurmd.service file
+    #   template:
+    #     src: "slurmd.service.j2"
+    #     dest: "/etc/systemd/system/slurmd.service"
+
+
+
+    # - name: Enable and start Slurm services on master node
+    #   systemd:
+    #     name: "{{ item }}"
+    #     state: started
+    #     enabled: yes
+    #   loop:
+    #     - slurmctld
+      
+    # - name: Enable and start Slurm services on compute nodes
+    #   systemd:
+    #     name: "{{ item }}"
+    #     state: started
+    #     enabled: yes
+    #   loop:
+    #     - slurmd
+      
+    # - name: Debug
+    #   debug:
+    #     msg: "Slurm installation and configuration completed on all nodes."
+
+# - name: Configure SLURM and Ganglia
+#   hosts: master
+#   become: yes
+#   roles:
+#     - slurm
+#     - ganglia
+
+# - name: Configure SLURM on Compute Nodes
+#   hosts: compute
+#   become: yes
+#   roles:
+#     - slurm
