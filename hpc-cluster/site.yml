@@ -9,6 +9,7 @@
         instance_type: t2.micro
         image_id: ami-04a81a99f5ec58529
         subnet_id: subnet-0af822569e9483069
+        security_groups: launch-wizard-11
         region: us-east-1
         count: "{{ item.count }}"
         wait: yes
