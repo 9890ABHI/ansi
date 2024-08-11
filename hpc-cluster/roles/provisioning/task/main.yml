@@ -1,11 +1,12 @@
 ---
 - name: Launch Master Node
   ec2:
-    key_name: "{{ aws_key_name }}"
-    instance_type: "{{ aws_instance_type }}"
-    image: "{{ aws_ami }}"
-    region: "{{ aws_region }}"
+    key_name: "{{ lookup('env', 'KEY_NAME') }}"
+    instance_type: "t2.micro"
+    image: "{{ lookup('env', 'IMAGE_NAME') }}"
+    region: "us-east-1"
     group: "{{ aws_security_group }}"
+    subnet_id: "{{ lookup('env', 'SUBNET_NAME') }}"
     count: 1
     instance_tags:
       Name: hpc-master
@@ -15,12 +16,13 @@
 
 - name: Launch Compute Nodes
   ec2:
-    key_name: "{{ aws_key_name }}"
-    instance_type: "{{ aws_instance_type }}"
-    image: "{{ aws_ami }}"
-    region: "{{ aws_region }}"
+    key_name: "{{ lookup('env', 'KEY_NAME') }}"
+    instance_type: "t2.micro"
+    image: "{{ lookup('env', 'IMAGE_NAME') }}"
+    region: "us-east-1"
     group: "{{ aws_security_group }}"
-    count: "{{ compute_instance_count }}"
+    count: 2
+    subnet_id: "{{ lookup('env', 'SUBNET_NAME') }}"
     instance_tags:
       Name: hpc-compute
       Role: compute
