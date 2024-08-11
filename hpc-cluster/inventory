@@ -1,9 +1,10 @@
 [master]
-# Populated dynamically by provisioning role
+master.example.com
 
 [compute]
-# Populated dynamically by provisioning role
+compute1.example.com
+compute2.example.com
 
-[hpc:children]
-master
-compute
+[all:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=~/.ssh/boot-1.pem

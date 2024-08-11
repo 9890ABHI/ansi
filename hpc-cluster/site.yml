@@ -1,30 +1,49 @@
----
-- hosts: localhost
-  connection: local
+- name: Provision EC2 instances
+  hosts: localhost
   gather_facts: no
+  tasks:
+    - name: Launch EC2 instances
+      amazon.aws.ec2_instance:
+        name: "{{ item.name }}"
+        key_name: boot-1
+        instance_type: t2.micro
+        image_id: ami-04a81a99f5ec58529
+        region: us-west-2
+        count: "{{ item.count }}"
+        wait: yes
+        state: present
+      loop:
+        - { name: "master", instance_type: "t2.micro", count: 1 }
+        - { name: "compute", instance_type: "t2.micro", count: 2 }
+      register: ec2
+
+- name: Set up HPC cluster
+  hosts: all
+  become: yes
   roles:
+    - common
     - provisioning
-
-- hosts: master
-  become: yes
-  roles:
     - master
-
-- hosts: compute
-  become: yes
-  roles:
     - compute
+
+
+
+
+
+
+
+
+
+
+
+
+
 # ---
 # - hosts: localhost
 #   connection: local
 #   gather_facts: no
 #   roles:
 #     - provisioning
-
-# - hosts: hpc
-#   become: yes
-#   roles:
-#     - common
 
 # - hosts: master
 #   become: yes
@@ -35,24 +54,45 @@
 #   become: yes
 #   roles:
 #     - compute
-# ---
-# - hosts: localhost
-#   connection: local
-#   gather_facts: no
-#   roles:
-#     - provisioning
+# # ---
+# # - hosts: localhost
+# #   connection: local
+# #   gather_facts: no
+# #   roles:
+# #     - provisioning
 
-# - hosts: hpc
-#   become: yes
-#   roles:
-#     - common
+# # - hosts: hpc
+# #   become: yes
+# #   roles:
+# #     - common
 
-# - hosts: master
-#   become: yes
-#   roles:
-#     - master
+# # - hosts: master
+# #   become: yes
+# #   roles:
+# #     - master
 
-# - hosts: compute
-#   become: yes
-#   roles:
-#     - compute
+# # - hosts: compute
+# #   become: yes
+# #   roles:
+# #     - compute
+# # ---
+# # - hosts: localhost
+# #   connection: local
+# #   gather_facts: no
+# #   roles:
+# #     - provisioning
+
+# # - hosts: hpc
+# #   become: yes
+# #   roles:
+# #     - common
+
+# # - hosts: master
+# #   become: yes
+# #   roles:
+# #     - master
+
+# # - hosts: compute
+# #   become: yes
+# #   roles:
+# #     - compute
