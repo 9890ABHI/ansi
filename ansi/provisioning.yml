@@ -2,7 +2,7 @@
   hosts: localhost
   gather_facts: no
   tasks:
-      - name: Launch master node
+    - name: Launch master node
       amazon.aws.ec2_instance:
         name: "hpc-master"
         key_name: boot-1
