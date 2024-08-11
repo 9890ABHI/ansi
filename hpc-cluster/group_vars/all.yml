@@ -1,10 +1,16 @@
 ---
 aws_region: us-east-1
-aws_key_name: "{{ lookup('env', 'KEY_NAME') }}"
+aws_key_name: boot-1
 aws_security_group: launch-wizard-11
-aws_ami: "{{ lookup('env', 'IMAGE_NAME') }}" # Replace with the AMI ID you want to use
+aws_ami: ami-04a81a99f5ec58529 # Replace with the AMI ID you want to use
 aws_instance_type: t2.micro
-aws_subnet_id: "{{ subnet_id }}"
+aws_subnet_id: subnet-0af822569e9483069
+# aws_region: us-east-1
+# aws_key_name: "{{ lookup('env', 'KEY_NAME') }}"
+# aws_security_group: launch-wizard-11
+# aws_ami: "{{ lookup('env', 'IMAGE_NAME') }}" # Replace with the AMI ID you want to use
+# aws_instance_type: t2.micro
+# aws_subnet_id: "{{ subnet_id }}"
 
 # Number of compute nodes to create
 compute_instance_count: 2
