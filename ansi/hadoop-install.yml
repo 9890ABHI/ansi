@@ -4,6 +4,8 @@
   become: yes
   vars:
     hadoop_version: "3.3.5"
+    hadoop_user: hadoop
+    hadoop_group: hadoop
     hadoop_dir: "/opt/hadoop"
     hadoop_tar: "hadoop-{{ hadoop_version }}.tar.gz"
     hadoop_url: "https://downloads.apache.org/hadoop/common/hadoop-{{ hadoop_version }}/{{ hadoop_tar }}"
@@ -14,13 +16,32 @@
         name:
           - wget
           - tar
+          - openjdk-11-jdk
         state: present
         update_cache: yes
+
+    - name: Create Hadoop group
+      group:
+        name: "{{ hadoop_group }}"
+        state: present
+
+    - name: Create Hadoop user
+      user:
+        name: "{{ hadoop_user }}"
+        group: "{{ hadoop_group }}"
+        home: "{{ hadoop_dir }}"
+        createhome: no
+        shell: /bin/bash
 
     - name: Download Hadoop tarball
       get_url:
         url: "{{ hadoop_url }}"
         dest: "/tmp/{{ hadoop_tar }}"
+    
+    - name: Create hadoop configuration directory
+      file:
+        path: "{{ hadoop_dir }}"
+        state: directory
 
     - name: Extract Hadoop tarball
       unarchive:
@@ -85,6 +106,13 @@
         owner: hadoop
         group: hadoop
         mode: '0644'
+        
+    - name: Set JAVA_HOME environment variable
+      lineinfile:
+        path: /opt/hadoop/hadoop-3.3.5/etc/hadoop/hadoop-env.sh
+        regexp: '^export JAVA_HOME='
+        line: 'export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64'
+      become: yes
 
     - name: Format the Namenode
       command: "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/bin/hdfs namenode -format"
@@ -114,3 +142,24 @@
         - hadoop-nodemanager
       become: yes
       when: inventory_hostname != "master"
+
+
+
+
+
+
+
+    - name: Start Hadoop DataNode service
+      systemd:
+       name: hadoop-datanode
+       state: started
+       enabled: yes
+      become: yes
+
+    - name: Start Hadoop NodeManager service
+      systemd:
+        name: hadoop-nodemanager
+        state: started
+        enabled: yes
+      become: yes
+     
