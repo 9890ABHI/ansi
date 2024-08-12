@@ -89,7 +89,7 @@
     - name: Format the Namenode
       command: "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/bin/hdfs namenode -format"
       become: yes
-      when: inventory_hostname == "hadoop-master"
+      when: inventory_hostname == "master"
 
     - name: Start Hadoop services
       systemd:
@@ -102,7 +102,7 @@
         - hadoop-resourcemanager
         - hadoop-nodemanager
       become: yes
-      when: inventory_hostname == "hadoop-master"
+      when: inventory_hostname == "master"
 
     - name: Start Hadoop DataNode and NodeManager
       systemd:
@@ -113,4 +113,4 @@
         - hadoop-datanode
         - hadoop-nodemanager
       become: yes
-      when: inventory_hostname != "hadoop-master"
+      when: inventory_hostname != "master"
