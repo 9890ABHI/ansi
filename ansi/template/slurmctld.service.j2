@@ -1,0 +1,14 @@
+[Unit]
+Description=SLURM controller daemon
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/sbin/slurmctld
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/run/slurm/slurmctld.pid
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+

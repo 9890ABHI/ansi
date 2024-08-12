@@ -1,0 +1,116 @@
+---
+- name: Install and Configure Hadoop
+  hosts: all
+  become: yes
+  vars:
+    hadoop_version: "3.3.5"
+    hadoop_dir: "/opt/hadoop"
+    hadoop_tar: "hadoop-{{ hadoop_version }}.tar.gz"
+    hadoop_url: "https://downloads.apache.org/hadoop/common/hadoop-{{ hadoop_version }}/{{ hadoop_tar }}"
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - wget
+          - tar
+        state: present
+        update_cache: yes
+
+    - name: Download Hadoop tarball
+      get_url:
+        url: "{{ hadoop_url }}"
+        dest: "/tmp/{{ hadoop_tar }}"
+
+    - name: Extract Hadoop tarball
+      unarchive:
+        src: "/tmp/{{ hadoop_tar }}"
+        dest: "{{ hadoop_dir }}"
+        remote_src: yes
+
+    - name: Create Hadoop directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: hadoop
+        group: hadoop
+        mode: '0755'
+      loop:
+        - "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/logs"
+        - "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/tmp"
+
+    - name: Set up Hadoop environment variables
+      lineinfile:
+        path: /etc/profile
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - 'export HADOOP_HOME={{ hadoop_dir }}/hadoop-{{ hadoop_version }}'
+        - 'export PATH=$PATH:$HADOOP_HOME/bin'
+        - 'export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop'
+
+    - name: Source profile to apply environment variables
+      shell: source /etc/profile
+      args:
+        executable: /bin/bash
+
+    - name: Configure Hadoop core-site.xml
+      template:
+        src: core-site.xml.j2
+        dest: "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/etc/hadoop/core-site.xml"
+        owner: hadoop
+        group: hadoop
+        mode: '0644'
+
+    - name: Configure Hadoop hdfs-site.xml
+      template:
+        src: hdfs-site.xml.j2
+        dest: "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/etc/hadoop/hdfs-site.xml"
+        owner: hadoop
+        group: hadoop
+        mode: '0644'
+
+    - name: Configure Hadoop mapred-site.xml
+      template:
+        src: mapred-site.xml.j2
+        dest: "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/etc/hadoop/mapred-site.xml"
+        owner: hadoop
+        group: hadoop
+        mode: '0644'
+
+    - name: Configure Hadoop yarn-site.xml
+      template:
+        src: yarn-site.xml.j2
+        dest: "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/etc/hadoop/yarn-site.xml"
+        owner: hadoop
+        group: hadoop
+        mode: '0644'
+
+    - name: Format the Namenode
+      command: "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/bin/hdfs namenode -format"
+      become: yes
+      when: inventory_hostname == "hadoop-master"
+
+    - name: Start Hadoop services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - hadoop-namenode
+        - hadoop-datanode
+        - hadoop-resourcemanager
+        - hadoop-nodemanager
+      become: yes
+      when: inventory_hostname == "hadoop-master"
+
+    - name: Start Hadoop DataNode and NodeManager
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - hadoop-datanode
+        - hadoop-nodemanager
+      become: yes
+      when: inventory_hostname != "hadoop-master"

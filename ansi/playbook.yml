@@ -25,7 +25,7 @@
           # - libmariadb-dev
           - libsqlite3-dev
           - pkg-config
-          - slurm-client
+          # - slurm-client
         state: present
 
     - name: Download Slurm source

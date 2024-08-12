@@ -1,0 +1,26 @@
+# Sample SLURM configuration file
+
+ControlMachine=slurmctl
+SlurmdPort=7003
+SlurmctldPort=7003
+SlurmdSpoolDir=/var/spool/slurmd
+StateSaveLocation=/var/lib/slurm
+SlurmdPidFile=/var/run/slurmd.pid
+SlurmctldPidFile=/var/run/slurmctld.pid
+
+# Job and Task Scheduling
+SchedulerType=sched/backfill
+SelectType=select/cons_res
+SelectTypeParameters=CR_Core
+
+# Nodes and Partitions
+NodeName=compute[1-4] NodeAddr=192.168.0.1 CPUs=4 State=UNKNOWN
+PartitionName=debug Nodes=compute[1-4] Default=YES MaxTime=00:30:00 State=UP
+
+# Logging
+SlurmdDebug=info
+SlurmctldDebug=info
+
+# Accounting
+AccountingStorageType=accounting_storage/slurmdbd
+AccountingStorageHost=localhost

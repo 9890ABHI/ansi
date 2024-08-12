@@ -1,0 +1,219 @@
+---
+- name: Install and Configure Slurm  Ubuntu
+  hosts: all
+  become: yes
+  vars:
+    slurm_version: "21.08.8"
+    slurm_user: slurm
+    slurm_group: slurm
+    slurm_dir: /opt/slurm
+    slurm_conf: /etc/slurm/slurm.conf
+
+  tasks:
+
+    # - name: Ensure required packages are installed (RedHat)
+    #   when: ansible_os_family == "RedHat"
+    #   package:
+    #     name:
+    #       - epel-release
+    #       - wget
+    #       - gcc
+    #       - gcc-c++
+    #       - make
+    #       - munge
+    #       - munge-devel
+    #       - pam-devel
+    #       - openssl-devel
+    #       - rpm-build
+    #       - rpmdevtools
+    #       - readline-devel
+    #     state: present
+
+    - name: Ensure required packages are installed (Ubuntu)
+      when: ansible_os_family == "Debian"
+      apt:
+        name:
+          - wget
+          - gcc
+          - g++
+          - make
+          - libmunge-dev
+          - libpam0g-dev
+          - libssl-dev
+          - build-essential
+          - libreadline-dev
+          - slurm-wlm
+        state: present
+        update_cache: yes
+
+    - name: Create Slurm group
+      group:
+        name: "{{ slurm_group }}"
+        state: present
+
+    - name: Create Slurm user
+      user:
+        name: "{{ slurm_user }}"
+        group: "{{ slurm_group }}"
+        home: "{{ slurm_dir }}"
+        createhome: no
+        shell: /bin/bash
+
+    # - name: Download Slurm source code
+    #   get_url:
+    #     url: "https://download.schedmd.com/slurm/slurm-{{ slurm_version }}.tar.bz2"
+    #     dest: /tmp/slurm-{{ slurm_version }}.tar.bz2
+
+    # - name: Extract Slurm source code
+    #   unarchive:
+    #     src: /tmp/slurm-{{ slurm_version }}.tar.bz2
+    #     dest: /tmp/
+    #     remote_src: yes
+
+    # - name: Configure and install Slurm
+    #   shell: |
+    #     cd /tmp/slurm-{{ slurm_version }}
+    #     ./configure --prefix={{ slurm_dir }} --sysconfdir=/etc/slurm
+    #     make
+    #     make install
+    #   args:
+    #     creates: "{{ slurm_dir }}/bin/srun"
+
+          #- name: Create slurm.conf configuration file
+          #template:
+          #src: /home/abc/ansible/templates/slurm.conf.j2
+          #        dest: "{{ slurm_conf }}"
+          #owner: "{{ slurm_user }}"
+          #group: "{{ slurm_group }}"
+          #mode: '0644'
+
+    - name: Ensure the /etc/slurm directory exists
+      file:
+        path: /etc/slurm
+        state: directory
+        owner: slurm
+        group: slurm
+        mode: '0755'
+
+    - name: Create slurm.conf from template
+      template:
+        src: slurm.conf.j2
+        dest: /etc/slurm/slurm.conf
+        owner: slurm
+        group: slurm
+        mode: '0644'
+
+
+          #- name: Set up Munge key
+          ##shell: |
+          # create-munge-key
+          # systemctl enable munge
+          # systemctl start munge
+
+    # - name: Install Munge (RedHat)
+    #   package:
+    #     name: munge
+    #     state: present
+    #   become: yes
+
+    - name: Install Munge (Ubuntu)
+      apt:
+        name: munge
+        state: present
+      become: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Ensure munge directory exists
+      file:
+        path: /etc/munge
+        state: directory
+        owner: munge
+        group: munge
+        mode: '0755'
+      become: yes
+
+    - name: Generate Munge key
+      command: "mungekey"
+      args:
+        creates: /etc/munge/munge.key
+      become: yes
+
+    - name: Set permissions for Munge key
+      file:
+        path: /etc/munge/munge.key
+        owner: munge
+        group: munge
+        mode: '0400'
+      become: yes
+
+    - name: Start and enable Munge service
+      systemd:
+        name: munge
+        state: started
+        enabled: yes
+      become: yes
+
+    # - name: Create SLURM service file for slurmd
+    #   copy:
+    #     dest: /etc/systemd/system/slurmd.service
+    #     content: |
+    #       [Unit]
+    #       Description=SLURM node daemon
+    #       After=network.target
+
+    #       [Service]
+    #       Type=forking
+    #       ExecStart=/usr/sbin/slurmd
+    #       ExecReload=/bin/kill -HUP $MAINPID
+    #       PIDFile=/run/slurm/slurmd.pid
+    #       Restart=on-failure
+
+    #       [Install]
+    #       WantedBy=multi-user.target
+    #   become: yes
+
+    # - name: Create SLURM service file for slurmctld
+    #   copy:
+    #     dest: /etc/systemd/system/slurmctld.service
+    #     content: |
+    #       [Unit]
+    #       Description=SLURM controller daemon
+    #       After=network.target
+
+    #       [Service]
+    #       Type=forking
+    #       ExecStart=/usr/sbin/slurmctld
+    #       ExecReload=/bin/kill -HUP $MAINPID
+    #       PIDFile=/run/slurm/slurmctld.pid
+    #       Restart=on-failure
+
+    #       [Install]
+    #       WantedBy=multi-user.target
+    #   become: yes
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+      become: yes
+
+    - name: Start SLURM services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - slurmctld
+        - slurmd
+      become: yes
+      register: service_status
+
+    - name: Show service status
+      debug:
+        msg: "Service {{ item.item }} status: {{ item.status }}"
+      loop: "{{ service_status.results }}"
+      when: service_status.failed
+
+    - name: Check SLURM configuration
+      command: scontrol show config
+      register: slurm_config
+      become: yes
