@@ -1,0 +1,14 @@
+- name: Update and upgrade APT packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+
+- name: Install common packages
+  apt:
+    name:
+      - git
+      - build-essential
+      - python3-pip
+      - vim
+      - wget
+    state: present

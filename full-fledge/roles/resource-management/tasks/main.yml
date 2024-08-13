@@ -1,0 +1,24 @@
+- name: Install SLURM and dependencies
+  apt:
+    name:
+      - slurm-wlm
+      - slurm-wlm-doc
+      - slurm-wlm-torque
+    state: present
+
+- name: Configure SLURM
+  template:
+    src: slurm.conf.j2
+    dest: /etc/slurm-llnl/slurm.conf
+
+- name: Start SLURM services
+  service:
+    name: slurmd
+    state: started
+    enabled: yes
+
+- name: Start SLURM control daemon
+  service:
+    name: slurmctld
+    state: started
+    enabled: yes

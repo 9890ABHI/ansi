@@ -1,0 +1,9 @@
+- name: Setup HPC Cluster
+  hosts: aws
+  become: yes
+  roles:
+    - common
+    - resource-management
+    - monitoring
+    - ldap
+    - hpc-applications

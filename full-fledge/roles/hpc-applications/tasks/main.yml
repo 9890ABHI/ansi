@@ -1,0 +1,15 @@
+- name: Add OpenFOAM repository
+  apt_repository:
+    repo: ppa:openfoam/ppa
+    state: present
+
+- name: Install OpenFOAM
+  apt:
+    name: openfoam
+    state: present
+
+- name: Install VASP
+  copy:
+    src: vasp.5.4.4
+    dest: /opt/vasp
+    mode: '0755'

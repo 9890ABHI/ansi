@@ -1,0 +1,11 @@
+- name: Install LDAP server
+  apt:
+    name:
+      - slapd
+      - ldap-utils
+    state: present
+
+- name: Configure LDAP
+  template:
+    src: ldap-config.ldif
+    dest: /etc/ldap/ldap.conf
