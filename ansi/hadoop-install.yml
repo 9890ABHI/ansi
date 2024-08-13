@@ -9,8 +9,44 @@
     hadoop_dir: "/opt/hadoop"
     hadoop_tar: "hadoop-{{ hadoop_version }}.tar.gz"
     hadoop_url: "https://downloads.apache.org/hadoop/common/hadoop-{{ hadoop_version }}/{{ hadoop_tar }}"
+    old_hadoop_dirs:
+      - "/opt/hadoop/hadoop-*"
+    hadoop_services:
+      - hadoop-namenode
+      - hadoop-datanode
+      - hadoop-resourcemanager
+      - hadoop-nodemanager
 
   tasks:
+    - name: Stop and disable old Hadoop services
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+      loop: "{{ hadoop_services }}"
+      ignore_errors: yes
+
+    - name: Remove old Hadoop directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ old_hadoop_dirs }}"
+      ignore_errors: yes
+
+    - name: Remove old Hadoop packages (if installed via package manager)
+      apt:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - hadoop
+
+
+    # - name: Remove old Hadoop user
+    #   user:
+    #     name: hadoop
+    #     state: absent
+    #     remove: yes
+
     - name: Install required packages
       apt:
         name:
@@ -106,60 +142,146 @@
         owner: hadoop
         group: hadoop
         mode: '0644'
-        
+
     - name: Set JAVA_HOME environment variable
       lineinfile:
         path: /opt/hadoop/hadoop-3.3.5/etc/hadoop/hadoop-env.sh
         regexp: '^export JAVA_HOME='
         line: 'export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64'
+        create: yes
       become: yes
 
-    - name: Format the Namenode
-      command: "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/bin/hdfs namenode -format"
-      become: yes
-      when: inventory_hostname == "master"
 
-    - name: Start Hadoop services
+
+# 
+
+    - name: Create Hadoop NameNode service file
+      copy:
+        dest: /etc/systemd/system/hadoop-namenode.service
+        content: |
+          [Unit]
+          Description=Hadoop NameNode
+          After=network.target
+
+          [Service]
+          Type=forking
+          ExecStart={{ hadoop_dir }}/bin/hdfs --daemon start namenode
+          ExecStop={{ hadoop_dir }}/bin/hdfs --daemon stop namenode
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+      become: yes
+
+    - name: Create Hadoop DataNode service file
+      copy:
+        dest: /etc/systemd/system/hadoop-datanode.service
+        content: |
+          [Unit]
+          Description=Hadoop DataNode
+          After=network.target
+
+          [Service]
+          Type=forking
+          ExecStart={{ hadoop_dir }}/bin/hdfs --daemon start datanode
+          ExecStop={{ hadoop_dir }}/bin/hdfs --daemon stop datanode
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+      become: yes
+
+    - name: Create Hadoop ResourceManager service file
+      copy:
+        dest: /etc/systemd/system/hadoop-resourcemanager.service
+        content: |
+          [Unit]
+          Description=Hadoop ResourceManager
+          After=network.target
+
+          [Service]
+          Type=forking
+          ExecStart={{ hadoop_dir }}/bin/yarn --daemon start resourcemanager
+          ExecStop={{ hadoop_dir }}/bin/yarn --daemon stop resourcemanager
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+      become: yes
+
+    - name: Create Hadoop NodeManager service file
+      copy:
+        dest: /etc/systemd/system/hadoop-nodemanager.service
+        content: |
+          [Unit]
+          Description=Hadoop NodeManager
+          After=network.target
+
+          [Service]
+          Type=forking
+          ExecStart={{ hadoop_dir }}/bin/yarn --daemon start nodemanager
+          ExecStop={{ hadoop_dir }}/bin/yarn --daemon stop nodemanager
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+      become: yes
+
+    - name: Reload systemd daemon
       systemd:
-        name: "{{ item }}"
-        state: started
-        enabled: yes
-      loop:
-        - hadoop-namenode
-        - hadoop-datanode
-        - hadoop-resourcemanager
-        - hadoop-nodemanager
-      become: yes
-      when: inventory_hostname == "master"
-
-    - name: Start Hadoop DataNode and NodeManager
-      systemd:
-        name: "{{ item }}"
-        state: started
-        enabled: yes
-      loop:
-        - hadoop-datanode
-        - hadoop-nodemanager
-      become: yes
-      when: inventory_hostname != "master"
-
-
-
-
-
-
-
-    - name: Start Hadoop DataNode service
-      systemd:
-       name: hadoop-datanode
-       state: started
-       enabled: yes
+        daemon_reload: yes
       become: yes
 
-    - name: Start Hadoop NodeManager service
-      systemd:
-        name: hadoop-nodemanager
-        state: started
-        enabled: yes
-      become: yes
-     
+
+# 
+
+    # - name: Start Hadoop NameNode
+    #   command: "/opt/hadoop/hadoop-3.3.5/bin/hdfs --daemon start namenode"
+    #   become: yes
+    #   when: inventory_hostname == 'master'
+
+    # - name: Start Hadoop DataNode
+    #   command: "/opt/hadoop/hadoop-3.3.5/bin/hdfs --daemon start datanode"
+    #   become: yes
+    #   when: inventory_hostname != 'master'
+
+    # - name: Start Hadoop ResourceManager
+    #   command: "/opt/hadoop/hadoop-3.3.5/bin/yarn --daemon start resourcemanager"
+    #   become: yes
+    #   when: inventory_hostname == 'master'
+
+    # - name: Start Hadoop NodeManager
+    #   command: "/opt/hadoop/hadoop-3.3.5/bin/yarn --daemon start nodemanager"
+    #   become: yes
+    #   when: inventory_hostname != 'master'
+
+
+    # - name: Start Hadoop services
+    #   systemd:
+    #     name: "{{ item }}"
+    #     state: started
+    #     enabled: yes
+    #   loop:
+    #     - hadoop-namenode
+    #     - hadoop-datanode
+    #     - hadoop-resourcemanager
+    #     - hadoop-nodemanager
+    #   become: yes
+    #   when: inventory_hostname == "master"
+
+    # - name: Start Hadoop DataNode and NodeManager
+    #   systemd:
+    #     name: "{{ item }}"
+    #     state: started
+    #     enabled: yes
+    #   loop:
+    #     - hadoop-datanode
+    #     - hadoop-nodemanager
+    #   become: yes
+    #   when: inventory_hostname != "master"
+
+
+    # - name: Format the Namenode
+    #   command: "{{ hadoop_dir }}/hadoop-{{ hadoop_version }}/bin/hdfs namenode -format"
+    #   become: yes
+    #   when: inventory_hostname == "master"

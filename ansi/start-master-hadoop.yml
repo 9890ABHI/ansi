@@ -1,0 +1,42 @@
+# ---
+# - name: Install and Configure Hadoop
+#   hosts: all
+#   become: yes
+#   tasks:
+#     - name: Start Hadoop NameNode
+#       command: "/opt/hadoop/hadoop-3.3.5/bin/hdfs --daemon start namenode"
+#       become: yes
+#       when: inventory_hostname == 'master'
+
+#     - name: Start Hadoop DataNode
+#       command: "/opt/hadoop/hadoop-3.3.5/bin/hdfs --daemon start datanode"
+#       become: yes
+#       when: inventory_hostname != 'master'
+
+#     - name: Start Hadoop ResourceManager
+#       command: "/opt/hadoop/hadoop-3.3.5/bin/yarn --daemon start resourcemanager"
+#       become: yes
+#       when: inventory_hostname == 'master'
+
+#     - name: Start Hadoop NodeManager
+#       command: "/opt/hadoop/hadoop-3.3.5/bin/yarn --daemon start nodemanager"
+#       become: yes
+#       when: inventory_hostname != 'master'
+
+---
+- name: Install and Configure Hadoop
+  hosts: all
+  become: yes
+  tasks:
+    - name: Start Hadoop services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - hadoop-namenode
+        - hadoop-datanode
+        - hadoop-resourcemanager
+        - hadoop-nodemanager
+      become: yes
+      when: inventory_hostname == "master"

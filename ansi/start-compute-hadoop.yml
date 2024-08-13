@@ -1,0 +1,14 @@
+---
+- name: Install and Configure Hadoop
+  hosts: all
+  become: yes
+    - name: Start Hadoop DataNode and NodeManager
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - hadoop-datanode
+        - hadoop-nodemanager
+      become: yes
+      when: inventory_hostname != "master"

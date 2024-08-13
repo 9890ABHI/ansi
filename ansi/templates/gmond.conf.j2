@@ -1,0 +1,23 @@
+globals {
+    daemonize = yes
+    setuid = ganglia
+    setgid = ganglia
+    // other settings as needed
+}
+
+cluster {
+    name = "MyCluster"
+    owner = "Owner"
+    latlong = "lat,long"
+    url = "http://example.com"
+}
+
+# Define the host's metrics
+include /etc/ganglia/conf.d/*.conf
+
+# Add master server address for monitoring
+udp_send_channel {
+    host = {{ ganglia_server_ip }}
+    port = 8649
+    ttl = 1
+}

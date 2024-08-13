@@ -1,0 +1,284 @@
+---
+- name: Install and Configure Ganglia
+  hosts: all
+  become: yes
+  vars:
+    ganglia_server_ip: "{{ hostvars['master']['ansible_host'] }}"
+  tasks:
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Ganglia packages
+      apt:
+        name:
+          - ganglia-monitor
+          - ganglia-webfrontend
+          - ganglia-gmetad
+        state: present
+
+    - name: Configure Ganglia GMOND (for all nodes)
+      template:
+        src: gmond.conf.j2
+        dest: /etc/ganglia/gmond.conf
+      notify:
+        - restart gmond
+
+    - name: Configure Ganglia GMETAD (only for server role)
+      when: "'master' in group_names"
+      template:
+        src: gmetad.conf.j2
+        dest: /etc/ganglia/gmetad.conf
+      notify:
+        - restart gmetad
+
+    - name: Configure Ganglia server web interface (only for server role)
+      when: "'master' in group_names"
+      template:
+        src: ganglia-web.conf.j2
+        dest: /etc/apache2/sites-available/ganglia.conf
+      notify:
+        - restart apache2
+
+    - name: Enable Ganglia site configuration (for server role)
+      when: "'master' in group_names"
+      command: a2ensite ganglia.conf
+
+    - name: Start and enable Ganglia services
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - ganglia-monitor
+        - ganglia-gmetad
+      when: "'master' in group_names"
+      notify:
+        - restart gmond
+        - restart gmetad
+
+    - name: Start and enable Apache HTTP server
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+      when: "'master' in group_names"
+
+  handlers:
+    - name: restart apache2
+      service:
+        name: apache2
+        state: restarted
+
+    - name: restart gmond
+      service:
+        name: ganglia-monitor
+        state: restarted
+
+    - name: restart gmetad
+      service:
+        name: ganglia-gmetad
+        state: restarted
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# --------------------------------------------------------------
+
+# ---
+# - name: Install and Configure Ganglia
+#   hosts: all
+#   become: yes
+#   vars:
+#     ganglia_server_ip: "{{ hostvars['master']['ansible_host'] }}"
+#   tasks:
+
+#     - name: Install necessary repositories
+#       apt:
+#         name: software-properties-common
+#         state: present
+
+#     - name: Add Ganglia PPA repository
+#       apt_repository:
+#         repo: ppa:ganglia-team/ppa
+#         state: present
+
+#     - name: Update apt cache
+#       apt:
+#         update_cache: yes
+
+#     - name: Install Ganglia packages
+#       apt:
+#         name:
+#           - ganglia-monitor
+#           - ganglia-webfrontend
+#           - ganglia-gmetad
+#         state: present
+
+#     - name: Configure Ganglia GMOND (for all nodes)
+#       template:
+#         src: gmond.conf.j2
+#         dest: /etc/ganglia/gmond.conf
+#       notify:
+#         - restart gmond
+
+#     - name: Configure Ganglia GMETAD (only for server role)
+#       when: "'master' in group_names"
+#       template:
+#         src: gmetad.conf.j2
+#         dest: /etc/ganglia/gmetad.conf
+#       notify:
+#         - restart gmetad
+
+#     - name: Configure Ganglia server web interface (only for server role)
+#       when: "'master' in group_names"
+#       template:
+#         src: ganglia-web.conf.j2
+#         dest: /etc/apache2/sites-available/ganglia.conf
+#       notify:
+#         - restart apache2
+
+#     - name: Enable Ganglia site configuration (for server role)
+#       when: "'master' in group_names"
+#       command: a2ensite ganglia.conf
+
+#     - name: Start and enable Ganglia services
+#       service:
+#         name: "{{ item }}"
+#         state: started
+#         enabled: yes
+#       loop:
+#         - ganglia-monitor
+#         - ganglia-gmetad
+#       when: "'master' in group_names"
+#       notify:
+#         - restart gmond
+#         - restart gmetad
+
+#     - name: Start and enable Apache HTTP server
+#       service:
+#         name: apache2
+#         state: started
+#         enabled: yes
+#       when: "'master' in group_names"
+
+#   handlers:
+#     - name: restart apache2
+#       service:
+#         name: apache2
+#         state: restarted
+
+#     - name: restart gmond
+#       service:
+#         name: ganglia-monitor
+#         state: restarted
+
+#     - name: restart gmetad
+#       service:
+#         name: ganglia-gmetad
+#         state: restarted
+
+
+
+
+
+
+
+
+
+
+
+
+# ----------------------------------------------------------------
+
+# ---
+# - name: Install and Configure Ganglia
+#   hosts: all
+#   become: yes
+#   vars:
+#         ganglia_server_ip: "{{ hostvars['master']['ansible_host'] }}"
+#   tasks:
+
+#     - name: Install EPEL repository
+#       apt:
+#         name: epel-release
+#         state: present
+
+#     - name: Install Ganglia packages
+#       yum:
+#         name:
+#           - ganglia-gmond
+#           - ganglia-gmetad
+#           - ganglia-web
+#         state: present
+
+#     - name: Configure Ganglia server (only for server role)
+#       when: "'master' in group_names"
+#       template:
+#         src: ganglia-web.conf.j2
+#         dest: /etc/httpd/conf.d/ganglia.conf
+#       notify:
+#         - restart httpd
+
+#     - name: Configure Ganglia GMOND (for all nodes)
+#       template:
+#         src: gmond.conf.j2
+#         dest: /etc/ganglia/gmond.conf
+#       notify:
+#         - restart gmond
+
+#     - name: Configure Ganglia GMETAD (only for server role)
+#       when: "'master' in group_names"
+#       template:
+#         src: gmetad.conf.j2
+#         dest: /etc/ganglia/gmetad.conf
+#       notify:
+#         - restart gmetad
+
+#     - name: Start and enable Ganglia services
+#       service:
+#         name: "{{ item }}"
+#         state: started
+#         enabled: yes
+#       loop:
+#         - gmond
+#         - gmetad
+#       when: "'ganglia_server' in group_names"
+#       notify:
+#         - restart gmond
+#         - restart gmetad
+
+#     - name: Start and enable Apache HTTP server
+#       service:
+#         name: httpd
+#         state: started
+#         enabled: yes
+#       when: "'ganglia_server' in group_names"
+
+#   handlers:
+#     - name: restart httpd
+#       service:
+#         name: httpd
+#         state: restarted
+
+#     - name: restart gmond
+#       service:
+#         name: gmond
+#         state: restarted
+
+#     - name: restart gmetad
+#       service:
+#         name: gmetad
+#         state: restarted
