@@ -10,7 +10,7 @@
   tasks:
     - name: Launch master node
       amazon.aws.ec2_instance:
-        name: hpc-"{{ item.name }}"
+        name: hpc-master
         key_name: "{{ key_name }}"
         instance_type: "{{ instance_type }}"
         image_id: "{{ ami_id }}"
@@ -23,7 +23,7 @@
 
     - name: Launch compute nodes
       amazon.aws.ec2_instance:
-        name: hpc-"{{ item.name }}"
+        name: hpc-compute
         key_name: "{{ key_name }}"
         instance_type: "{{ instance_type }}"
         image_id: "{{ ami_id }}"
