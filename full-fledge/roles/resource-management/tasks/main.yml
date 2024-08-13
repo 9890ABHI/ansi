@@ -1,3 +1,9 @@
+- name: Create SLURM configuration directory
+  file:
+    path: /etc/slurm-llnl
+    state: directory
+    mode: '0755'
+
 - name: Install SLURM and dependencies
   apt:
     name:
@@ -5,6 +11,7 @@
       - slurm-wlm-doc
       - slurm-wlm-torque
     state: present
+
 
 - name: Configure SLURM
   template:

@@ -1,0 +1,37 @@
+# Root domain entry
+dn: dc={{ ldap_domain }},dc={{ ldap_tld }}
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: {{ ldap_org }}
+dc: {{ ldap_domain }}
+
+# Organizational Unit (OU) for users
+dn: ou=users,dc={{ ldap_domain }},dc={{ ldap_tld }}
+objectClass: top
+objectClass: organizationalUnit
+ou: users
+
+# Organizational Unit (OU) for groups
+dn: ou=groups,dc={{ ldap_domain }},dc={{ ldap_tld }}
+objectClass: top
+objectClass: organizationalUnit
+ou: groups
+
+# Example user entry
+dn: uid=john.doe,ou=users,dc={{ ldap_domain }},dc={{ ldap_tld }}
+objectClass: inetOrgPerson
+cn: John Doe
+sn: Doe
+uid: john.doe
+userPassword: {SSHA}{{ hashed_password }}
+mail: john.doe@example.com
+
+# Example group entry
+dn: cn=developers,ou=groups,dc={{ ldap_domain }},dc={{ ldap_tld }}
+objectClass: posixGroup
+cn: developers
+gidNumber: 1001
+
+# Example group membership
+dn: uid=john.doe,ou

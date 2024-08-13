@@ -1,0 +1,23 @@
+# Example SLURM configuration file
+
+ClusterName=mycluster
+SlurmdPort=7003
+SlurmctldPort=7002
+AuthType=auth/munge
+StateSaveLocation=/var/spool/slurmd
+SlurmdSpoolDir=/var/spool/slurmd
+SlurmdPort=7003
+SlurmdPidFile=/run/slurm/slurmd.pid
+SlurmdSocketDir=/run/slurm
+SlurmctldPidFile=/run/slurm/slurmctld.pid
+SlurmctldSocketDir=/run/slurm
+
+{% set master_ip = hostvars['hpc-master'].ansible_host %}
+{% set worker_ips = [ hostvars['hpc-worker1'].ansible_host, hostvars['hpc-worker2'].ansible_host ] %}
+
+NodeName=master NodeAddr={{ master_ip }} State=UNKNOWN
+{% for ip in worker_ips %}
+NodeName=compute{{ loop.index }} NodeAddr={{ ip }} State=UNKNOWN
+{% endfor %}
+
+PartitionName=debug Nodes=master,compute[1-2] Default=YES MaxTime=01:00:00 State=UP

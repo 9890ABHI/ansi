@@ -1,0 +1,25 @@
+full-fledge/
+├── ansible.cfg
+├── inventory
+├── roles/
+│   ├── common/
+│   │   ├── tasks/
+│   │   │   └── main.yml
+│   ├── hpc-application/
+│   │   ├── tasks/
+│   │   │   └── main.yml
+│   ├── ldap/
+│   │   ├── defaults/
+│   │   │   └── main.yml
+│   │   ├── tasks/
+│   │   │   └── main.yml
+│   │   ├── templates/
+│   │   │   └── ldap-config.ldif.j2
+│   ├── resource-management/
+│   │   ├── tasks/
+│   │   │   └── main.yml
+│   │   ├── templates/
+│   │   │   └── slurm.conf.j2
+├── playbook.yml
+├── provisioning.yml
+└── README.md

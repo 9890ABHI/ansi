@@ -1,15 +1,33 @@
-- name: Add OpenFOAM repository
-  apt_repository:
-    repo: ppa:openfoam/ppa
-    state: present
+- name: Download OpenFOAM package
+  get_url:
+    url: 'http://dl.openfoam.org/ubuntu/dists/focal/main/binary-amd64/openfoam11_20240116_amd64.deb'
+    dest: '/tmp/openfoam11_20240116_amd64.deb'
 
-- name: Install OpenFOAM
+- name: Install OpenFOAM package
   apt:
-    name: openfoam
-    state: present
+    deb: '/tmp/openfoam11_20240116_amd64.deb'
 
-- name: Install VASP
-  copy:
-    src: vasp.5.4.4
-    dest: /opt/vasp
-    mode: '0755'
+- name: Clean up downloaded package
+  file:
+    path: '/tmp/openfoam11_20240116_amd64.deb'
+    state: absent
+
+
+
+# - name: Add OpenFOAM repository
+#   apt_repository:
+#     repo: ppa:openfoam/ppa
+#     state: present
+
+# - name: Install OpenFOAM
+#   apt:
+#     name: openfoam
+#     state: present
+
+# - name: Install VASP
+#   copy:
+#     src: vasp.5.4.4
+#     dest: /opt/vasp
+#     mode: '0755'
+
+
