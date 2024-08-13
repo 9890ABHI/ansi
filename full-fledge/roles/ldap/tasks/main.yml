@@ -29,6 +29,14 @@
     state: started
     enabled: yes
   become: yes
+  # when: master in 
+# - name: Ensure LDAP service is running
+#   service:
+#     name: nslcd
+#     state: started
+#     enabled: yes
+#   become: yes
+  # when: master in 
 
 - name: Add LDAP configuration
   template:
