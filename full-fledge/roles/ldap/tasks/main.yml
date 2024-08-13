@@ -1,3 +1,12 @@
+
+- name: Install LDAP server and utilities
+  apt:
+    name:
+      - slapd
+      - ldap-utils
+    state: present
+  become: yes
+
 - name: Generate hashed password
   command: slappasswd -h {SSHA} -s "{{ ldap_password }}"
   register: hashed_password_result
@@ -13,13 +22,6 @@
   set_fact:
     hashed_password: "{{ hashed_password_result.stdout | regex_replace('{SSHA}', '') }}"
 
-- name: Install LDAP server and utilities
-  apt:
-    name:
-      - slapd
-      - ldap-utils
-    state: present
-  become: yes
 
 - name: Ensure LDAP service is running
   service:
@@ -41,13 +43,13 @@
     mode: '0600'
   become: yes
 
-- name: Apply LDAP configuration
-  command: ldapadd -x -D "cn=admin,dc={{ ldap_domain }},dc={{ ldap_tld }}" -w /tmp/ldap-password.txt -f /tmp/ldap-config.ldif
-  become: yes
-  async: 600
-  poll: 10
-  args:
-    chdir: /tmp
+# - name: Apply LDAP configuration
+#   command: ldapadd -x -D "cn=admin,dc={{ ldap_domain }},dc={{ ldap_tld }}" -w /tmp/ldap-password.txt -f /tmp/ldap-config.ldif
+#   become: yes
+#   async: 600
+#   poll: 10
+#   args:
+#     chdir: /tmp
 
 # - name: Install LDAP server and utilities
 #   apt:

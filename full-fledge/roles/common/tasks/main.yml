@@ -1,3 +1,38 @@
+- name: Create /etc/hosts file from inventory content
+  copy:
+    content: |
+      master ansible_host={{ hostvars['master'].ansible_host }}
+
+      {% for instance in groups['compute'] %}
+      {{ instance }} ansible_host={{ hostvars[instance].ansible_host }}
+      {% endfor %}
+
+    dest: /etc/hosts
+
+- name: Ensure .ssh directory exists
+  file:
+    path: /root/.ssh
+    state: directory
+    mode: '0700'
+
+- name: Copy .pem file to root's .ssh directory
+  copy:
+    src: /path/to/your/keyfile.pem
+    dest: /root/.ssh/id_rsa
+    mode: '0600'
+    owner: root
+    group: root
+
+- name: Ensure correct permissions for .pem file
+  file:
+    path: /root/.ssh/id_rsa
+    mode: '0600'
+    owner: root
+    group: root
+
+
+
+
 - name: Update and upgrade APT packages
   apt:
     update_cache: yes

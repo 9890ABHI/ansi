@@ -1,0 +1,27 @@
+- name: Setup HPC Cluster
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Ensure LDAP configuration files are present
+      file:
+        path: "{{ item }}"
+        state: touch
+        mode: '0644'
+      with_items:
+        - /tmp/ldap-password.txt
+        - /tmp/ldap-config.ldif
+      become: yes
+
+    - name: Apply LDAP configuration
+      command: ldapadd -x -D "cn=admin,dc=example,dc=com" -w /tmp/ldap-password.txt -f /tmp/ldap-config.ldif
+      become: yes
+      register: ldap_add_result
+      ignore_errors: yes
+      async: 600
+      poll: 10
+
+    - name: Debug LDAP add result
+      debug:
+        msg: "{{ ldap_add_result.stdout }} {{ ldap_add_result.stderr }}"
+      when: ldap_add_result.failed
+
