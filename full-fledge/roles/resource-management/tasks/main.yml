@@ -23,9 +23,33 @@
     name: slurmd
     state: started
     enabled: yes
+  register: slurmd_service
+  ignore_errors: yes
 
 - name: Start SLURM control daemon
   service:
     name: slurmctld
     state: started
     enabled: yes
+  register: slurmctld_service
+  ignore_errors: yes
+
+- name: Check if slurmd is running
+  command: systemctl is-active slurmd
+  register: slurmd_status
+  failed_when: false
+  changed_when: false
+
+- name: Report slurmd status
+  debug:
+    msg: "slurmd is {{ slurmd_status.stdout }}"
+    
+- name: Check if slurmctld is running
+  command: systemctl is-active slurmctld
+  register: slurmctld_status
+  failed_when: false
+  changed_when: false
+
+- name: Report slurmctld status
+  debug:
+    msg: "slurmctld is {{ slurmctld_status.stdout }}"

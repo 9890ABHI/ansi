@@ -1,7 +1,7 @@
 - name: Install Nagios
   apt:
     name:
-      - nagios3
+      - nagios4
       - nagios-nrpe-plugin
       - nagios-plugins
     state: present

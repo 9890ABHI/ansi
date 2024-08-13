@@ -1,5 +1,5 @@
 ---
 ldap_domain: example
 ldap_tld: com
-ldap_org: cdac in
+ldap_org: cdacin
 ldap_password: "cdac"

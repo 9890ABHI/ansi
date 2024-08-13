@@ -1,34 +1,25 @@
+- name: Install LDAP server and utilities
+  apt:
+    name:
+      - slapd
+      - ldap-utils
+    state: present
+  become: yes
+
 - name: Generate hashed password
   command: slappasswd -h {SSHA} -s "{{ ldap_password }}"
   register: hashed_password_result
   changed_when: false
+  become: yes
 
 - name: Debug hashed password result
   debug:
     msg: "Hashed Password Result: {{ hashed_password_result.stdout }}"
+  become: yes
 
 - name: Extract hashed password
   set_fact:
     hashed_password: "{{ hashed_password_result.stdout | regex_replace('{SSHA}', '') }}"
-
-- name: Install LDAP server
-  apt:
-    name: slapd
-    state: present
-  become: yes
-
-- name: Install LDAP utilities
-  apt:
-    name: ldap-utils
-    state: present
-  become: yes
-
-- name: Ensure LDAP service is running
-  service:
-    name: slapd
-    state: started
-    enabled: yes
-  become: yes
 
 - name: Add LDAP configuration
   template:
@@ -37,29 +28,73 @@
   become: yes
 
 - name: Apply LDAP configuration
-  command: ldapadd -x -D "cn=admin,dc={{ ldap_domain }},dc={{ ldap_tld }}" -W -f /tmp/ldap-config.ldif
+  command: ldapadd -x -D "cn=admin,dc=example,dc=com" -W -f /tmp/ldap-config.ldif
   become: yes
   args:
     chdir: /tmp
 
+# - name: Generate hashed password
+#   command: slappasswd -h {SSHA} -s "{{ ldap_password }}"
+#   register: hashed_password_result
+#   changed_when: false
 
+# - name: Debug hashed password result
+#   debug:
+#     msg: "Hashed Password Result: {{ hashed_password_result.stdout }}"
 
-
-
+# - name: Extract hashed password
+#   set_fact:
+#     hashed_password: "{{ hashed_password_result.stdout | regex_replace('{SSHA}', '') }}"
 
 # - name: Install LDAP server
 #   apt:
-#     name:
-#       - slapd
-#       - ldap-utils
+#     name: slapd
 #     state: present
+#   become: yes
 
-# - name: Configure LDAP
-#   template:
-#     src: ldap-config.ldif
-#     dest: /etc/ldap/ldap.conf
+# - name: Install LDAP utilities
+#   apt:
+#     name: ldap-utils
+#     state: present
+#   become: yes
 
-# - name: Restart LDAP service
+# - name: Ensure LDAP service is running
 #   service:
 #     name: slapd
-#     state: restarted
+#     state: started
+#     enabled: yes
+#   become: yes
+
+# - name: Add LDAP configuration
+#   template:
+#     src: ldap-config.ldif.j2
+#     dest: /tmp/ldap-config.ldif
+#   become: yes
+
+# - name: Apply LDAP configuration
+#   command: ldapadd -x -D "cn=admin,dc={{ ldap_domain }},dc={{ ldap_tld }}" -W -f /tmp/ldap-config.ldif
+#   become: yes
+#   args:
+#     chdir: /tmp
+
+
+
+
+
+
+# # - name: Install LDAP server
+# #   apt:
+# #     name:
+# #       - slapd
+# #       - ldap-utils
+# #     state: present
+
+# # - name: Configure LDAP
+# #   template:
+# #     src: ldap-config.ldif
+# #     dest: /etc/ldap/ldap.conf
+
+# # - name: Restart LDAP service
+# #   service:
+# #     name: slapd
+# #     state: restarted
