@@ -4,9 +4,9 @@
   vars:
     aws_region: "us-east-1"
     instance_type: "t2.micro"
-    ami_id: "{{ lookup('env', 'IMAGE_NAME') }}" # Replace with your desired AMI ID
-    key_name: "{{ lookup('env', 'KEY_NAME') }}" # Replace with your AWS key pair name
-    subnet_id: "{{ lookup('env', 'SUBNET_NAME') }}" # Replace with your subnet ID
+    ami_id: ami-04a81a99f5ec58529 # "{{ lookup('env', 'IMAGE_NAME') }}" # Replace with your desired AMI ID
+    key_name: boot-1 # "{{ lookup('env', 'KEY_NAME') }}" # Replace with your AWS key pair name
+    subnet_id: subnet-0af822569e9483069 # "{{ lookup('env', 'SUBNET_NAME') }}" # Replace with your subnet ID
   tasks:
     - name: Launch master node
       amazon.aws.ec2_instance:
@@ -59,3 +59,14 @@
           [all:vars]
           ansible_user=ubuntu
         dest: inventory
+
+    - name: Create /etc/hosts file from inventory content
+      copy:
+        content: |
+          master ansible_host={{ hostvars['master'].ansible_host }}
+
+          {% for instance in groups['compute'] %}
+          {{ instance }} ansible_host={{ hostvars[instance].ansible_host }}
+          {% endfor %}
+
+        dest: /etc/hosts
