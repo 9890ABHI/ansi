@@ -1,0 +1,265 @@
+---
+- name: Install required packages on all nodes
+  hosts: all
+  become: yes  # Run tasks as sudo
+  tasks:
+    - name: Ensure general packages are installed
+      apt:
+        name:
+          - build-essential
+          - munge
+          - libmunge-dev
+          - libmunge2
+          - libmysqlclient-dev
+          - libssl-dev
+          - libpam0g-dev
+          - libnuma-dev
+          - perl
+          - make
+          - mailutils
+        state: present
+        update_cache: yes
+
+
+
+- name: Install required packages and run make install on compute nodes
+  hosts: compute_nodes
+  become: yes  # Run tasks as sudo
+  tasks:
+    - name: Ensure compute node specific packages are installed
+      apt:
+        name:
+          - build-essential
+          - munge
+          - libmunge-dev
+          - libmunge2
+          - make
+        state: present
+        update_cache: yes
+
+    - name: Run make install
+      command: make install
+      args:
+        #chdir: /path/to/source/code  # #Specify the path where make install should be run
+    
+    - name: Set ownership of /etc/munge/munge.key
+      file:
+        path: /etc/munge/munge.key
+        owner: munge
+        group: munge
+        mode: '0400'
+
+- name: Copy munge.key to remote hosts
+  hosts: localhost
+  become: no
+  tasks:
+
+
+    - name: Copy munge.key to compute nodes
+          copy:
+            src: /etc/munge/munge.key
+            dest: /tmp/munge.key
+            mode: '0400'
+
+    - name: Transfer munge.key to compute nodes
+      delegate_to: "{{ item }}"
+      command: scp -i /path/to/toot.pem -r /tmp/munge.key slurm@{{ item }}:/tmp
+      with_items:
+        - <IP of compute node 1>
+        - <IP of compute node 2>
+      when: ansible_hostname == "manager"
+
+
+
+
+    # - name: Copy munge.key to ubuntu@54.224.9.20:/tmp
+    #   command: scp -i /path/to/toot.pem -r /etc/munge/munge.key ubuntu@54.224.9.20:/tmp
+
+    # - name: Copy munge.key to ubuntu@54.156.75.8:/tmp
+    #   command: scp -i /path/to/toot.pem -r /etc/munge/munge.key ubuntu@54.156.75.8:/tmp
+
+    - name: Copy /tmp/munge.key to /etc/munge on compute nodes
+      command: cp -r /tmp/munge.key /etc/munge
+      args:
+        creates: /etc/munge/munge.key  # Ensures the command only runs if the file isn't already there
+
+
+
+- name: Install required packages and run make install on compute nodes
+  hosts: all
+  become: yes  # Run tasks as sudo
+  tasks:
+
+    - name: Copy /tmp/munge.key to /etc/munge on compute nodes
+      command: cp -r /tmp/munge.key /etc/munge
+      args:
+        creates: /etc/munge/munge.key  # Ensures the command only runs if the file isn't already there
+
+    - name: Set ownership for /etc/munge and /var/log/munge on compute nodes
+      command: chown -R munge: /etc/munge/ /var/log/munge/
+
+    - name: Set permissions for /etc/munge and /var/log/munge on compute nodes
+      command: chmod 0700 /etc/munge/ /var/log/munge/
+
+    - name: Enable munge service on compute nodes
+      systemd:
+        name: munge
+        enabled: yes
+
+    - name: Start munge service on compute nodes
+      systemd:
+        name: munge
+        state: started
+
+
+    - name: Enable and start munge service
+      systemd:
+        name: munge
+        enabled: yes
+        state: started
+
+    - name: Check status of munge service
+      systemd:
+        name: munge
+        state: started
+      register: munge_status
+
+    - name: Display munge service status
+      debug:
+        msg: "Munge service is {{ munge_status.status }}"
+
+
+
+
+- name: Configure Slurm on Manager (rename slurm.conf.example)
+  hosts: manager
+  become: yes
+  tasks:
+    - name: Change directory to /opt/slurm-21.08.8/etc
+      command: chdir=/opt/slurm-21.08.8/etc
+
+    - name: Copy slurm.conf.example to slurm.conf
+      copy:
+        src: /opt/slurm-21.08.8/etc/slurm.conf.example
+        dest: /opt/slurm-21.08.8/etc/slurm.conf
+
+    - name: Edit slurm.conf (manual step)Notify to manually edit slurm.conf
+      debug:
+        msg: "Please manually edit /opt/slurm-21.08.8/etc/slurm.conf after this playbook runs."
+
+    - name: Create symbolic link for slurmctld.service
+          file:
+            src: /opt/slurm-21.08.8/etc/slurmctld.service
+            dest: /usr/lib/systemd/system/slurmctld.service
+
+    - name: Create symbolic link for slurmd.service
+        file:
+          src: /opt/slurm-21.08.8/etc/slurmd.service
+          dest: /usr/lib/systemd/system/slurmd.service
+          state: link
+
+    - name: Notify to manually edit slurm.conf
+      debug:
+        msg: "Please manually edit the /opt/slurm-21.08.8/etc/slurm.conf file using 'vi' or another text editor."
+
+    - name: Start slurmctld in debug mode
+      command: /opt/slurm-21.08.8/sbin/slurmctld -D
+
+    
+     - name: Start slurmctld as a background service
+      systemd:
+        name: slurmctld
+        state: started
+
+
+
+    - name: Add /opt/slurm-21.08.8/bin to PATH
+      lineinfile:
+        path: /etc/profile.d/slurm.sh
+        create: yes
+        line: 'export PATH="/opt/slurm-21.08.8/bin:$PATH"'
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Add /opt/slurm-21.08.8/sbin to PATH
+      lineinfile:
+        path: /etc/profile.d/slurm.sh
+        line: 'export PATH="/opt/slurm-21.08.8/sbin:$PATH"'
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Add /opt/slurm-21.08.8/lib to LD_LIBRARY_PATH
+      lineinfile:
+        path: /etc/profile.d/slurm.sh
+        line: 'export LD_LIBRARY_PATH="/opt/slurm-21.08.8/lib:$LD_LIBRARY_PATH"'
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Notify to manually edit slurm.conf
+      debug:
+        msg: "Please manually edit the /opt/slurm-21.08.8/etc/slurm.conf file using 'vi' or another text editor."
+
+
+    - name: Copy slurm.conf to compute-1
+      command: scp -r /opt/slurm-21.08.8/etc/slurm.conf slurm@<IP of compute-1>:/tmp
+
+    - name: Copy slurm.conf to compute-2
+      command: scp -r /opt/slurm-21.08.8/etc/slurm.conf slurm@<IP of compute-2>:/tmp
+
+    - name: Notify to manually edit slurm.conf
+      debug:
+        msg: "Please manually edit the /opt/slurm-21.08.8/etc/slurm.conf file using 'vi' or another text editor."
+
+
+
+
+
+##---
+- name: Configure Slurm on Compute Nodes
+  hosts: compute_nodes
+  become: yes
+  tasks:
+    - name: Copy slurm.conf from /tmp to /opt/slurm-21.08.8/etc
+      copy:
+        src: /tmp/slurm.conf
+        dest: /opt/slurm-21.08.8/etc/slurm.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Create symbolic link for slurmd.service
+      file:
+        src: /opt/slurm-21.08.8/etc/slurmd.service
+        dest: /usr/lib/systemd/system/slurmd.service
+        state: link
+        owner: root
+        group: root
+
+    - name: Start slurmctld service
+      systemd:
+        name: slurmctld
+        state: started
+
+    - name: Start slurmd service
+      systemd:
+        name: slurmd
+        state: started
+
+    - name: Copy cgroup.conf.example to cgroup.conf
+      copy:
+        src: /opt/slurm-21.08.8/etc/cgroup.conf.example
+        dest: /opt/slurm-21.08.8/etc/cgroup.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy slurmdbd.conf.example to slurmdbd.conf
+      copy:
+        src: /opt/slurm-21.08.8/etc/slurmdbd.conf.example
+        dest: /opt/slurm-21.08.8/etc/slurmdbd.conf
+        owner: root
+        group: root
+        mode: '0644'
