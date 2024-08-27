@@ -1,0 +1,72 @@
+- name: Provision EC2 instances
+  hosts: localhost
+  gather_facts: no
+  vars:
+    aws_region: "us-east-1"
+    instance_type: "t2.micro"
+    ami_id: ami-04a81a99f5ec58529 # "{{ lookup('env', 'IMAGE_NAME') }}" # Replace with your desired AMI ID
+    key_name: boot-1 # "{{ lookup('env', 'KEY_NAME') }}" # Replace with your AWS key pair name
+    subnet_id: subnet-0af822569e9483069 # "{{ lookup('env', 'SUBNET_NAME') }}" # Replace with your subnet ID
+  tasks:
+    - name: Launch master node
+      amazon.aws.ec2_instance:
+        name: hpc-master
+        key_name: "{{ key_name }}"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ ami_id }}"
+        region: "{{ aws_region }}"
+        subnet_id: "{{ subnet_id }}"
+        security_groups: launch-wizard-11
+        count: 1
+        wait: yes
+      register: master_instance
+
+    - name: Launch compute nodes
+      amazon.aws.ec2_instance:
+        name: hpc-compute
+        key_name: "{{ key_name }}"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ ami_id }}"
+        region: "{{ aws_region }}"
+        subnet_id: "{{ subnet_id }}"
+        security_groups: launch-wizard-11
+        count: 2
+        wait: yes
+      register: compute_instances
+
+    - name: Add master to inventory
+      add_host:
+        name: "{{ master_instance.instances[0].public_ip_address }}"
+        groups: master
+
+    - name: Add compute nodes to inventory
+      add_host:
+        name: "{{ item.public_ip_address }}"
+        groups: compute
+      loop: "{{ compute_instances.instances }}"
+
+    - name: Save updated inventory to file
+      copy:
+        content: |
+          [master]
+          master ansible_host={{ master_instance.instances[0].public_ip_address }}
+
+          [compute]
+          {% for instance in compute_instances.instances %}
+          compute{{ loop.index }} ansible_host={{ instance.public_ip_address }}
+          {% endfor %}
+
+          [all:vars]
+          ansible_user=ubuntu
+        dest: inventory
+
+    - name: Create /etc/hosts file from inventory content
+      copy:
+        content: |
+          master ansible_host={{ hostvars['master'].ansible_host }}
+
+          {% for instance in groups['compute'] %}
+          {{ instance }} ansible_host={{ hostvars[instance].ansible_host }}
+          {% endfor %}
+
+        dest: /etc/hosts

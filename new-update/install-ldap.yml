@@ -1,0 +1,86 @@
+# Install LDAP on master node and utilities (slapd and ldap-utils)
+- hosts: master
+  become: yes
+  tasks:
+    - name: Install LDAP server and utilities
+      apt:
+        name:
+          - slapd
+          - ldap-utils
+        state: present
+
+    - name: Generate hashed password
+      command: slappasswd -h {SSHA} -s "{{ ldap_password }}"
+      register: hashed_password_result
+      changed_when: false
+
+    - name: Debug hashed password result
+      debug:
+        msg: "Hashed Password Result: {{ hashed_password_result.stdout }}"
+
+    - name: Extract hashed password
+      set_fact:
+        hashed_password: "{{ hashed_password_result.stdout }}"
+
+    - name: Ensure LDAP service is running
+      service:
+        name: slapd
+        state: started
+        enabled: yes
+
+    - name: Add LDAP configuration
+      template:
+        src: ldap-config.ldif.j2
+        dest: /tmp/ldap-config.ldif
+
+    - name: Create LDAP password file
+      copy:
+        content: "{{ ldap_password }}"
+        dest: /tmp/ldap-password.txt
+        mode: '0600'
+
+    - name: Apply LDAP configuration
+      command: ldapadd -x -D "cn=admin,dc={{ ldap_domain }},dc={{ ldap_tld }}" -w "{{ ldap_password }}" -f /tmp/ldap-config.ldif
+      async: 600
+      poll: 10
+      args:
+        chdir: /tmp
+
+    - name: Remove temporary LDAP password file
+      file:
+        path: /tmp/ldap-password.txt
+        state: absent
+
+# Install nslcd on compute nodes for LDAP authentication
+- hosts: compute
+  become: yes
+  tasks:
+    - name: Install nslcd and nscd on compute nodes
+      apt:
+        name:
+          - nslcd
+          - nscd
+        state: present
+
+    - name: Ensure nslcd service is running
+      service:
+        name: nslcd
+        state: started
+        enabled: yes
+
+    - name: Ensure nscd service is running (Name Service Cache Daemon)
+      service:
+        name: nscd
+        state: started
+        enabled: yes
+
+    - name: Copy nslcd.conf to compute nodes
+      template:
+        src: nslcd.conf.j2
+        dest: /etc/nslcd.conf
+        mode: '0644'
+
+    - name: Restart nslcd service after configuration change
+      service:
+        name: nslcd
+        state: restarted

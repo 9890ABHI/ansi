@@ -1,0 +1,7 @@
+
+uri ldap://{{ ldap_master_ip }}/
+base dc={{ ldap_domain }},dc={{ ldap_tld }}
+binddn cn=admin,dc={{ ldap_domain }},dc={{ ldap_tld }}
+bindpw {{ ldap_password }}
+ssl no
+tls_cacertfile /etc/ssl/certs/ca-certificates.crt

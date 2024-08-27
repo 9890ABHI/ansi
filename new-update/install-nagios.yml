@@ -1,0 +1,79 @@
+---
+- name: Install and configure Apache2 and Nagios on Ubuntu
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update package index
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Apache2
+      apt:
+        name: apache2
+        state: present
+
+    - name: Enable auth_digest module
+      command: a2enmod auth_digest
+      notify:
+        - Restart Apache
+
+    - name: Enable authz_groupfile module
+      command: a2enmod authz_groupfile
+      notify:
+        - Restart Apache
+
+    - name: Install Nagios4 and related packages
+      apt:
+        name:
+          - nagios4
+          - nagios-nrpe-plugin
+          - nagios-plugins-contrib
+        state: present
+
+    - name: Create Nagios admin user
+      command: >
+        htdigest -c /etc/nagios4/htdigest.users Nagios4 nagiosadmin
+      args:
+        creates: /etc/nagios4/htdigest.users
+
+    - name: Comment Require IP line in Nagios CGI config
+      lineinfile:
+        path: /etc/apache2/conf-enabled/nagios4-cgi.conf
+        regexp: "^Require ip"
+        line: "# Require ip"
+        state: present
+        backrefs: yes
+
+    - name: Comment "Require all granted" in Nagios CGI config
+      lineinfile:
+        path: /etc/apache2/conf-enabled/nagios4-cgi.conf
+        regexp: '^\s*Require all granted'
+        line: "# Require all granted"
+        state: present
+        backrefs: yes
+
+    - name: Uncomment "Require valid-user" in Nagios CGI config
+      lineinfile:
+        path: /etc/apache2/conf-enabled/nagios4-cgi.conf
+        regexp: '#\s*Require valid-user'
+        line: "Require valid-user"
+        state: present
+        backrefs: yes
+
+    - name: Enable authentication in Nagios CGI config
+      lineinfile:
+        path: /etc/nagios4/cgi.cfg
+        regexp: '^use_authentication\s*=\s*0'
+        line: "use_authentication=1"
+        state: present
+
+    - name: Restart Apache service
+      service:
+        name: apache2
+        state: restarted
+
+    - name: Restart Nagios service
+      service:
+        name: nagios4
+        state: restarted

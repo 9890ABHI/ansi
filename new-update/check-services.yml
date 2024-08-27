@@ -1,0 +1,62 @@
+---
+- name: Check service statuses on all hosts
+  hosts: all
+  become: yes
+  tasks:
+    - name: Check if slurmd service is running
+      shell: systemctl is-active slurmd
+      register: slurmd_status
+      ignore_errors: yes
+
+    - name: Display slurmd status
+      debug:
+        msg: "slurmd service status on {{ inventory_hostname }}: {{ slurmd_status.stdout | default('not found') }}"
+
+    - name: Check if slurmctld service is running
+      shell: systemctl is-active slurmctld
+      register: slurmctld_status
+      ignore_errors: yes
+
+    - name: Display slurmctld status
+      debug:
+        msg: "slurmctld service status on {{ inventory_hostname }}: {{ slurmctld_status.stdout | default('not found') }}"
+
+    - name: Check if slapd (LDAP) service is running
+      shell: systemctl is-active slapd
+      register: slapd_status
+      ignore_errors: yes
+
+    - name: Display slapd status
+      debug:
+        msg: "slapd service status on {{ inventory_hostname }}: {{ slapd_status.stdout }}"
+
+    - name: Check if nslcd (LDAP) service is running
+      shell: systemctl is-active nslcd
+      register: slapd_status
+      ignore_errors: yes
+      host: compute
+
+    - name: Display nslcd status
+      debug:
+        msg: "nslcd service status on {{ inventory_hostname }}: {{ slapd_status.stdout }}"
+      host: compute
+
+
+    - name: Check if nagios4 service is running
+      shell: systemctl is-active nagios4
+      register: nagios4_status
+      ignore_errors: yes
+
+    - name: Display nagios4 status
+      debug:
+        msg: "nagios4 service status on {{ inventory_hostname }}: {{ nagios4_status.stdout }}"
+
+
+    - name: Check if apache2 service is running
+      shell: systemctl is-active apache2
+      register: apache2_status
+      ignore_errors: yes
+
+    - name: Display apache2 status
+      debug:
+        msg: "apache2 service status on {{ inventory_hostname }}: {{ apache2_status.stdout }}"
